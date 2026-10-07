@@ -21,3 +21,6 @@ artifacts/characters/*
 !artifacts/characters/atlas-desktop.png
 !artifacts/characters/detail-desktop.png
 !artifacts/characters/detail-390.png
+
+!artifacts/render-character-lineup.mjs
+!artifacts/characters/reference-style-lineup.png

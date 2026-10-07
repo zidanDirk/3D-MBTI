@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
-// Original collectible figures. All geometry is local: no remote assets or textures.
+// Reference-guided graphic figures. All geometry is local: no remote assets or textures.
 export const characterTypes = Object.freeze(['INTJ', 'INTP', 'ENTJ', 'ENTP', 'INFJ', 'INFP', 'ENFJ', 'ENFP', 'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'ISTP', 'ISFP', 'ESTP', 'ESFP']);
 const families = [
   { family: '分析家', familyKey: 'analysts', color: '#b997ff', dark: '#655291', pale: '#e7dcff' },
@@ -10,22 +10,22 @@ const families = [
   { family: '探险家', familyKey: 'explorers', color: '#ffd278', dark: '#b78339', pale: '#fff0c7' },
 ];
 const identities = [
-  ['建筑师', '把想象搭成未来', '全息蓝图', '展开未来蓝图'],
-  ['逻辑学家', '给每个问号一个宇宙', '轨道原子', '原子环缓缓公转'],
-  ['指挥官', '带着伙伴向前一步', '星际指挥棒', '披风与指挥棒轻摆'],
-  ['辩论家', '灵感永远有下一招', '灵感灯泡', '点亮下一颗灵感'],
-  ['提倡者', '看见每一点微光', '水晶引路杖', '水晶微光环绕'],
-  ['调停者', '把心事写成星星', '星空手账', '让故事里的星星升起'],
-  ['主人公', '把热爱传给更多人', '爱心信标', '举起连接彼此的信标'],
-  ['竞选者', '和新鲜事一起起飞', '星际背包', '星星跟随好奇心'],
-  ['物流师', '认真让世界有序', '任务记录板', '核对今日探索清单'],
-  ['守卫者', '温柔也有守护的力量', '爱心护盾', '护盾在掌心轻摆'],
-  ['总经理', '把计划变成现实', '调度终端', '查看城市运行面板'],
-  ['执政官', '让每个人都有归属', '心意礼盒', '递来一份小小心意'],
-  ['鉴赏家', '动手发现新可能', '多功能扳手', '检查下一件发明'],
-  ['探险家', '给日常涂上自己的颜色', '星形调色盘', '画笔与色彩一起摇摆'],
-  ['企业家', '下一站，立刻出发', '悬浮滑板', '准备下一次街头冒险'],
-  ['表演者', '此刻就是我的舞台', '星光麦克风', '跟着节拍轻轻律动'],
+  ['建筑师', '把想象搭成未来', '几何西装', '沉静观察，轻轻点头'],
+  ['逻辑学家', '给每个问号一个宇宙', '实验烧瓶', '思考时轻摆实验瓶'],
+  ['指挥官', '带着伙伴向前一步', '指挥棒', '指挥棒随手势轻摆'],
+  ['辩论家', '灵感永远有下一招', '交叠礼服', '扬起眉毛，准备新观点'],
+  ['提倡者', '看见每一点微光', '白须与引路杖', '白须长者轻轻点头'],
+  ['调停者', '把心事写成星星', '绿叶花冠', '花冠随好奇心轻摆'],
+  ['主人公', '把热爱传给更多人', '守护长剑', '稳稳握住守护之剑'],
+  ['竞选者', '和新鲜事一起起飞', '绿发与领结', '张开双手迎接新朋友'],
+  ['物流师', '认真让世界有序', '灰色档案夹', '翻看手中的档案夹'],
+  ['守卫者', '温柔也有守护的力量', '十字护士帽', '温柔地挥手致意'],
+  ['总经理', '把计划变成现实', '刻度直尺', '抬手检查规划尺度'],
+  ['执政官', '让每个人都有归属', '信封与肩包', '将心意送到你的身边'],
+  ['鉴赏家', '动手发现新可能', '护目镜与工具', '挥动手中的修理工具'],
+  ['探险家', '给日常涂上自己的颜色', '画笔与调色盘', '画笔与调色盘一起摇摆'],
+  ['企业家', '下一站，立刻出发', '墨镜与公文包', '拎起公文包，立即出发'],
+  ['表演者', '此刻就是我的舞台', '双手沙锤', '摇动沙锤，跟随节拍'],
 ];
 export function getCharacterInfo(type) {
   const index = characterTypes.indexOf(type);
@@ -35,426 +35,185 @@ export function getCharacterInfo(type) {
   return { type: characterTypes[safeIndex], family, familyKey, color, role, tagline, prop, motion };
 }
 
+// Extruded graphic characters: broad rectangular silhouette, ink contours and
+// flat geometric panels deliberately follow the supplied visual reference.
 export function createCharacter(type, { withPedestal = true } = {}) {
-  const info = getCharacterInfo(type);
-  const index = characterTypes.indexOf(info.type);
-  const palette = families[Math.floor(index / 4)];
-  const { color, dark, pale } = palette;
-  const root = new THREE.Group();
-  root.name = `character-${info.type}`;
-  root.userData.characterType = info.type;
-  const body = new THREE.Group(); root.add(body);
-  body.position.y = withPedestal ? .16 : 0;
-  const geometries = new Set();
-  const materials = new Map();
-  const cache = new Map();
-  const motions = [];
-  const cream = '#f3f0e8';
-  const ink = '#253147';
-  const metal = '#aab8cd';
-  const skin = ['#efb995', '#deb08d', '#aa7255', '#f0cbb1', '#c68c68', '#efd2ba', '#9c674e', '#d9a17f', '#d2a080', '#f2c6a5', '#a97054', '#e8b292', '#c58e6a', '#9d6c55', '#edc1a2', '#d79b79'][index];
-  const hair = ['#353247', '#293746', '#302b39', '#625079', '#3a3944', '#8b514d', '#34303a', '#eea16e', '#39465a', '#6e473d', '#2a3442', '#394c57', '#e5dbbc', '#3e3249', '#815941', '#694367'][index];
-  function material(c, mode = 'soft') {
-    const key = `${c}:${mode}`;
-    if (!materials.has(key)) materials.set(key, new THREE.MeshStandardMaterial({ color: c, roughness: mode === 'metal' ? .3 : .59, metalness: mode === 'metal' ? .55 : .04, ...(mode === 'glow' ? { emissive: c, emissiveIntensity: .65 } : {}) }));
-    return materials.get(key);
-  }
-  function geo(key, make) {
-    if (!cache.has(key)) { const geometry = make(); cache.set(key, geometry); geometries.add(geometry); }
-    return cache.get(key);
-  }
-  function mesh(p, geometry, c, x, y, z, mode) {
-    geometries.add(geometry);
-    const m = new THREE.Mesh(geometry, material(c, mode));
-    m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; p.add(m); return m;
-  }
-  function box(p, c, x, y, z, w, h, d, r = .035, mode) {
-    const key = `box:${w}:${h}:${d}:${r}`;
-    return mesh(p, geo(key, () => new RoundedBoxGeometry(w, h, d, 2, Math.min(r, w / 2, h / 2, d / 2))), c, x, y, z, mode);
-  }
-  function ball(p, c, x, y, z, rx, ry = rx, rz = rx, mode) {
-    const m = mesh(p, geo('sphere', () => new THREE.SphereGeometry(1, 16, 12)), c, x, y, z, mode);
-    m.scale.set(rx, ry, rz); return m;
-  }
-  function cylinder(p, c, x, y, z, rt, rb, h, sides = 16, mode) {
-    return mesh(p, geo(`cyl:${rt}:${rb}:${h}:${sides}`, () => new THREE.CylinderGeometry(rt, rb, h, sides)), c, x, y, z, mode);
-  }
-  function ring(p, c, x, y, z, r, tube = .018, mode) {
-    return mesh(p, geo(`ring:${r}:${tube}`, () => new THREE.TorusGeometry(r, tube, 5, 32)), c, x, y, z, mode);
-  }
-  function rod(p, c, a, b, radius = .035, mode) {
-    const start = new THREE.Vector3(...a), end = new THREE.Vector3(...b);
-    const m = cylinder(p, c, 0, 0, 0, radius, radius, start.distanceTo(end), 10, mode);
-    m.position.copy(start).add(end).multiplyScalar(.5);
-    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.sub(start).normalize()); return m;
-  }
-  function shapeMesh(p, points, c, x, y, z, depth = .045, bevel = .015) {
-    const shape = new THREE.Shape(); points.forEach(([px, py], i) => i ? shape.lineTo(px, py) : shape.moveTo(px, py)); shape.closePath();
-    return mesh(p, new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: bevel > 0, bevelSegments: 1, steps: 1, bevelSize: bevel, bevelThickness: bevel }), c, x, y, z);
-  }
-  function star(p, c, x, y, z, size = .15) {
-    const points = Array.from({ length: 10 }, (_, k) => { const a = Math.PI / 2 + k * Math.PI / 5, r = size * (k % 2 ? .47 : 1); return [Math.cos(a) * r, Math.sin(a) * r]; });
-    return shapeMesh(p, points, c, x, y, z, .035, .009);
-  }
-  function heart(p, c, x, y, z, size = .14) {
-    const shape = new THREE.Shape();
-    shape.moveTo(0, -.8); shape.bezierCurveTo(-1.55, .1, -.8, 1.3, 0, .5); shape.bezierCurveTo(.8, 1.3, 1.55, .1, 0, -.8);
-    const m = mesh(p, new THREE.ExtrudeGeometry(shape, { depth: .28, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: .07, bevelThickness: .06, curveSegments: 8 }), c, x, y, z);
-    m.scale.setScalar(size); return m;
-  }
-  function group(p, name, x = 0, y = 0, z = 0) { const g = new THREE.Group(); g.name = name; g.position.set(x, y, z); p.add(g); return g; }
-  function motion(object, amplitude, speed, axis = 'y', phase = 0) {
-    const neutral = object.rotation[axis]; motions.push(t => { object.rotation[axis] = neutral + Math.sin(t * speed + phase) * amplitude; });
-  }
-  if (withPedestal) {
-    cylinder(root, '#20263f', 0, .065, 0, .83, .86, .13, 48, 'metal');
-    cylinder(root, dark, 0, .137, 0, .81, .83, .025, 48);
-    const rim = ring(root, color, 0, .152, 0, .78, .012, 'glow'); rim.rotation.x = -Math.PI / 2;
-    for (let n = 0; n < 4; n++) {
-      const a = n * Math.PI / 2; const tick = box(root, pale, Math.sin(a) * .73, .156, Math.cos(a) * .73, .075, .009, .015, .003); tick.rotation.y = a;
+  const info=getCharacterInfo(type),index=characterTypes.indexOf(info.type),family=Math.floor(index/4);
+  const ink='#292828',skin='#e7bda5',paper='#fffaf0';
+  const colors=[['#885577','#ad829f','#513c63'],['#639e79','#8cbb8c','#367f67'],['#72b7be','#a5d5d8','#3c7e91'],['#cfb349','#ebce70','#937943']][family];
+  const [base,light,dark]=colors;
+  const hairColors={INTJ:'#9780af',INTP:'#985c81',ENTJ:'#393838',ENTP:'#3b3b3c',INFJ:'#f5f4eb',INFP:'#a9c57d',ENFJ:'#383c3a',ENFP:'#72b696',ISTJ:'#f5f3ec',ISFJ:'#42413f',ESTJ:'#353537',ESFJ:'#464749',ISTP:'#a88846',ISFP:'#d4b14b',ESTP:'#dfb644',ESFP:'#303333'};
+  const hair=hairColors[info.type],root=new THREE.Group();root.name=`character-${info.type}`;root.userData.characterType=info.type;
+  const resources=new Set(),materials=new Map();
+  function mat(c){if(!materials.has(c))materials.set(c,new THREE.MeshBasicMaterial({color:c,toneMapped:false}));return materials.get(c);}
+  function mesh(p,g,c,x=0,y=0,z=0){resources.add(g);const m=new THREE.Mesh(g,mat(c));m.position.set(x,y,z);p.add(m);return m;}
+  function group(p,name,x=0,y=0,z=0){const g=new THREE.Group();g.name=name;g.position.set(x,y,z);p.add(g);return g;}
+  // Round joins are merged into one contour mesh; outlines remain bold on WebGL,
+  // where LineBasicMaterial linewidth is not portable.
+  function stroke(p,points,{closed=false,width=.018,color=ink}={}){
+    const positions=points.map(v=>new THREE.Vector3(...v)),parts=[];
+    const count=closed?positions.length:positions.length-1;
+    for(let i=0;i<count;i++){
+      const a=positions[i],b=positions[(i+1)%positions.length],length=a.distanceTo(b);if(length<.00001)continue;
+      const g=new THREE.CylinderGeometry(width,width,length,6,1).toNonIndexed();
+      const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());g.applyQuaternion(q);g.translate(...a.clone().add(b).multiplyScalar(.5));parts.push(g);
     }
+    for(const v of positions){const g=new THREE.SphereGeometry(width,6,4).toNonIndexed();g.translate(...v);parts.push(g);}
+    const merged=mergeGeometries(parts);parts.forEach(g=>g.dispose());return mesh(p,merged,color);
   }
-  // Grounded, slightly asymmetric stance: feet never slide during the idle cycle.
-  const spread = info.type === 'ESTP' || info.type === 'ENTJ' ? .225 : .18;
-  [-1, 1].forEach(side => {
-    const leg = cylinder(body, ink, side * spread, .53, 0, .12, .105, .65, 12);
-    leg.rotation.z = side * -.035;
-    box(body, dark, side * spread, .18, .07, .27, .25, .41, .07);
-    box(body, ink, side * spread, .065, .075, .29, .10, .44, .035);
-    box(body, pale, side * spread, .28, .105, .19, .055, .30, .015);
-    box(body, color, side * spread, .13, .275, .17, .05, .025, .008);
+  function poly(p,points,c,{x=0,y=0,z=0,depth=.055,outline=true,width=.020,round=0}={}){
+    if(round){const vertices=points;points=[];for(let i=0;i<vertices.length;i++){const prev=new THREE.Vector2(...vertices[(i+vertices.length-1)%vertices.length]),v=new THREE.Vector2(...vertices[i]),next=new THREE.Vector2(...vertices[(i+1)%vertices.length]);const a=v.clone().lerp(prev,Math.min(.3,round/v.distanceTo(prev))),b=v.clone().lerp(next,Math.min(.3,round/v.distanceTo(next)));for(let j=0;j<=4;j++){const t=j/4;points.push([a.x*(1-t)**2+2*v.x*t*(1-t)+b.x*t*t,a.y*(1-t)**2+2*v.y*t*(1-t)+b.y*t*t]);}}}
+    const shape=new THREE.Shape();points.forEach(([px,py],i)=>i?shape.lineTo(px,py):shape.moveTo(px,py));shape.closePath();
+    const g=group(p,'graphic-panel',x,y,z);const solid=mesh(g,new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:false,steps:1}),c);solid.material=[mat(c),mat('#'+new THREE.Color(c).multiplyScalar(.65).getHexString())];
+    if(outline)stroke(g,points.map(([px,py])=>[px,py,depth+.006]),{closed:true,width});return g;
+  }
+  const rectPoints=(w,h)=>[[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]];
+  function rect(p,c,x,y,z,w,h,depth=.055,outline=true){return poly(p,rectPoints(w,h),c,{x,y,z,depth,outline});}
+  function ellipse(p,c,x,y,z,rx,ry,depth=.045,outline=true){const points=Array.from({length:32},(_,i)=>{const a=i*Math.PI*2/32;return [Math.cos(a)*rx,Math.sin(a)*ry];});return poly(p,points,c,{x,y,z,depth,outline});}
+  function line(p,points,width=.018,color=ink){return stroke(p,points,{width,color});}
+  const body=group(root,'body',0,withPedestal?.14:0,0);
+  if(withPedestal){mesh(root,new THREE.CylinderGeometry(.98,1.02,.09,48),ink,0,.045,0);mesh(root,new THREE.CylinderGeometry(.94,.94,.025,48),dark,0,.105,0);}
+  const torso=group(body,'torso',0,.83,0);
+  const longRobe=['INFJ','INFP','INTP','ESFP'].includes(info.type);
+  // The reference has almost no exposed leg: a small cuff anchors the box body.
+  rect(body,skin,0,.10,-.28,1.23,.17,.56);
+  if(!longRobe)line(body,[[0,.02,.365],[0,.54,.365]],.017);
+  rect(torso,base,0,-.13,-.29,1.24,1.09,.58);
+  const head=group(body,'head',0,1.75,0);
+  // Ear circles sit behind the face; chamfered cheeks and flat chin echo the drawing.
+  ellipse(head,skin,-.63,-.05,.04,.105,.13,.20);ellipse(head,skin,.63,-.05,.04,.105,.13,.20);
+  const facePoints=[[-.61,-.41],[0,-.55],[.61,-.41],[.61,.30],[.45,.46],[-.43,.46],[-.61,.28]];
+  poly(head,facePoints,skin,{z:-.27,depth:.62,width:.024});
+  // Face: big white circular eyes, smaller pupils, line brows and tiny nose.
+  [-1,1].forEach(s=>{
+    if(info.type==='ISTP'&&s===-1){line(head,[[-.34,-.055,.42],[-.23,-.03,.42],[-.12,-.055,.42]],.020);return;}
+    ellipse(head,paper,s*.225,-.04,.37,.155,.171,.016);
+    ellipse(head,ink,s*.219,-.05,.40,.063,.075,.012,false);
+    ellipse(head,paper,s*.219-.018,-.024,.42,.018,.022,.005,false);
+    const tilt=['ENTP','ENTJ'].includes(info.type)?-.065:.018;
+    line(head,[[s*.225-.105,.195+s*tilt,.405],[s*.225,.23,.405],[s*.225+.095,.195-s*tilt,.405]],.020);
   });
-  const torso = group(body, 'torso', 0, 1.34, 0);
-  const coatLength = ['INTJ', 'INTP', 'INFJ'].includes(info.type) ? 1.09 : .83;
-  const coatColor = info.type === 'INTP' ? cream : color;
-  const coat = cylinder(torso, coatColor, 0, -.03, 0, .30, .39, coatLength, 8); coat.scale.z = .70;
-  box(torso, cream, 0, .11, .205, .30, .55, .12, .03);
-  // Two folded lapels create a tailored front, with a luminous family pin.
-  [-1, 1].forEach(side => {
-    const lapel = shapeMesh(torso, [[0, .29], [side * .17, .24], [side * .08, -.08]], pale, side * .03, .16, .273, .022, .008);
-    lapel.rotation.z = side * -.12;
-  });
-  box(torso, dark, 0, -.30, .02, .69, .105, .47, .025);
-  box(torso, '#eddb9a', .02, -.30, .28, .12, .09, .035, .015, 'metal');
-  for (let j = 0; j < 2; j++) ball(torso, dark, .08, -.035 - j * .13, .285, .025, .025, .014);
-  star(torso, pale, -.22, .21, .285, .057);
-  cylinder(torso, skin, 0, .51, 0, .13, .15, .24);
-  box(torso, pale, 0, .42, .015, .35, .10, .30, .035);
-
-  const head = group(body, 'head', 0, 2.37, 0);
-  const face = box(head, skin, 0, 0, 0, .89, .94, .79, .23);
-  face.name = 'face';
-  [-1, 1].forEach(side => {
-    ball(head, skin, side * .46, -.04, .01, .105, .135, .105);
-    ball(head, '#c47c6b', side * .493, -.04, .065, .034, .068, .025);
-    const eyeX = side * .183;
-    ball(head, '#fefcf7', eyeX, -.01, .390, .105, .125, .035);
-    ball(head, ink, eyeX + .01, -.006, .424, .057, .077, .023);
-    ball(head, '#ffffff', eyeX - .006, .023, .447, .016, .023, .009);
-    const brow = box(head, hair, eyeX, .165 + (side === 1 && index % 3 === 0 ? .022 : 0), .396, .17, .042, .027, .019);
-    brow.rotation.z = side * (index % 4 === 0 ? -.1 : .09);
-    ball(head, '#e69385', side * .28, -.15, .390, .075, .032, .016);
-  });
-  ball(head, skin, .01, -.12, .430, .055, .06, .049);
-  const smile = mesh(head, new THREE.TorusGeometry(.087, .012, 5, 14, Math.PI * .75), '#864f52', 0, -.205, .41);
-  smile.rotation.z = Math.PI * 1.125;
-  // Scalp cap and sculpted swept locks, leaving the expression entirely readable.
-  const scalp = mesh(head, new THREE.SphereGeometry(1, 18, 10, 0, Math.PI * 2, 0, Math.PI * .58), hair, 0, .17, -.045);
-  scalp.scale.set(.49, .41, .44);
-  for (let j = 0; j < 4; j++) {
-    const lock = ball(head, hair, -.29 + j * .175, .31 + (j % 2) * .022, .292, .14, .22 - j * .014, .10);
-    lock.rotation.z = -.4 + index % 3 * .12;
+  line(head,[[-.035,-.17,.408],[.01,-.195,.409],[.05,-.17,.408]],.015);
+  const smile=['ISFJ','ENFP','ESFP','ESFJ','ESTP'].includes(info.type);
+  if(smile)poly(head,[[-.14,-.265],[.15,-.265],[.075,-.345],[-.04,-.345]],paper,{z:.39,depth:.025,width:.014});
+  else line(head,[[-.12,-.30,.415],[0,-.27,.415],[.12,-.30,.415]],.014);
+  [-1,1].forEach(s=>poly(head,[[s*.32,-.25],[s*.48,-.19],[s*.46,-.31]],'#d49b89',{z:.373,depth:.01,outline:false}));
+  // Sculpted hair is a single graphic mass, extruded around the back of the head.
+  let hairPoints=[[-.65,-.05],[-.65,.39],[-.48,.56],[-.17,.63],[.22,.62],[.55,.48],[.65,.27],[.65,-.03],[.48,.06],[.38,.31],[-.12,.33],[-.43,.21],[-.49,-.02]];
+  if(info.type==='INTJ')hairPoints=[[-.65,-.13],[-.64,.38],[-.40,.57],[.12,.62],[.55,.48],[.63,.27],[.62,-.1],[.48,.02],[.41,.28],[.13,.46],[-.06,.27],[-.28,.43],[-.49,.27],[-.49,-.10]];
+  if(info.type==='ISTP')hairPoints=[[-.64,.09],[-.58,.43],[-.32,.57],[0,.62],[.4,.52],[.62,.31],[.61,.02],[.49,.14],[.40,.34],[-.35,.34],[-.49,.13]];
+  if(info.type==='ESTP')hairPoints=[[-.64,.02],[-.63,.51],[.20,.69],[.63,.51],[.47,.22],[.20,.32],[-.11,.40],[-.43,.26],[-.49,-.06]];
+  if(info.type==='ISFP')hairPoints=[[-.63,.02],[-.61,.34],[-.77,.39],[-.64,.50],[-.66,.69],[-.45,.65],[-.32,.80],[-.13,.69],[.06,.83],[.22,.70],[.43,.78],[.50,.61],[.71,.61],[.69,.37],[.57,.10],[.49,.10],[.43,.32],[-.43,.32],[-.50,.06]];
+  if(['INFJ','ISTJ'].includes(info.type))hairPoints=[[-.65,-.04],[-.65,.39],[-.54,.56],[-.27,.65],[.22,.65],[.54,.53],[.64,.36],[.65,-.01],[.48,.07],[.45,.31],[.03,.36],[-.34,.42],[-.49,.27],[-.49,-.05]];
+  if(info.type==='ENFP')hairPoints=[[-.66,-.25],[-.64,.35],[-.47,.56],[-.16,.66],[.24,.62],[.54,.45],[.65,.28],[.64,-.23],[.44,-.04],[.35,.28],[.04,.39],[-.12,.15],[-.48,-.06]];
+  if(info.type==='ENFJ')hairPoints=[[-.64,-.20],[-.64,.38],[-.48,.57],[.33,.57],[.57,.40],[.62,.05],[.49,.04],[.48,.28],[-.44,.28],[-.45,-.12]];
+  if(info.type==='INFP')hairPoints=[[-.65,-.36],[-.65,.28],[-.51,.52],[-.18,.62],[.25,.60],[.55,.43],[.67,.18],[.65,-.35],[.45,-.24],[.39,.14],[.21,.34],[.02,.24],[-.22,.39],[-.45,.21],[-.47,-.20]];
+  if(info.type==='ESFP')hairPoints=[[-.72,-.42],[-.63,-.06],[-.63,.39],[-.47,.60],[-.15,.73],[.19,.72],[.34,.62],[.58,.52],[.66,.26],[.67,-.12],[.81,-.42],[.54,-.46],[.46,-.05],[.32,.32],[.14,.36],[-.04,.22],[-.38,.17],[-.48,-.10],[-.47,-.43]];
+  if(info.type==='ESFJ')hairPoints=[[-.65,-.02],[-.65,.38],[-.48,.61],[.12,.65],[.54,.54],[.65,.33],[.65,-.09],[.48,.06],[.38,.35],[.11,.20],[-.22,.38],[-.49,.13]];
+  if(['ENTJ','ESTJ','INTP'].includes(info.type)){
+    ellipse(head,hair,-.40,.43,-.25,.27,.30,.30);
+    if(info.type==='INTP')poly(head,[[-.51,.52],[-.73,.67],[-.91,.54],[-.93,.14],[-1.06,.03],[-.72,.05],[-.62,.27]],hair,{z:-.25,depth:.30});
   }
-  [-1, 1].forEach(side => ball(head, hair, side * .408, .10, -.045, .084, .245, .29));
-  head.rotation.z = [-.035, .04, 0, -.06][index % 4];
-  motion(head, .055, .8, 'y', index * .3);
-
-  function glasses(round = false, goggles = false) {
-    const y = goggles ? .29 : -.004, z = goggles ? .369 : .454;
-    [-1, 1].forEach(side => {
-      if (round) ring(head, goggles ? dark : metal, side * .185, y, z, .135, goggles ? .034 : .016, 'metal');
-      else {
-        const g = group(head, 'glasses', side * .185, y, z);
-        box(g, dark, 0, .10, 0, .255, .026, .025, .01);
-        box(g, dark, 0, -.095, 0, .255, .026, .025, .01);
-        [-1, 1].forEach(s => box(g, dark, s * .116, 0, 0, .026, .19, .025, .01));
-      }
-      rod(head, metal, [side * .30, y, z], [side * .48, y + .02, .0], .015, 'metal');
-    });
-    rod(head, metal, [-.06, y + .025, z], [.06, y + .025, z], .015, 'metal');
+  poly(head,hairPoints,hair,{z:-.30,depth:.70,width:.025,round:['ISFP','ESTP','INTJ'].includes(info.type)?0:.13});
+  if(info.type==='ENFP')line(head,[[.04,.60,.423],[.02,.42,.423],[-.03,.28,.423]],.015);
+  // Broad triangular collars carry each family's graphic identity.
+  poly(torso,[[-.61,.30],[0,-.06],[-.61,-.12]],light,{z:.315,depth:.045});
+  poly(torso,[[.61,.30],[0,-.06],[.61,-.12]],light,{z:.315,depth:.045});
+  const arms=[];
+  function arm(side){const a=group(torso,side<0?'left-arm':'right-arm',side*.62,.10,0);a.rotation.z=side*.13;
+    poly(a,[[0,.17],[side*.24,-.13],[side*.18,-.31],[-side*.05,-.18]],skin,{z:-.18,depth:.40});
+    poly(a,[[0,.19],[side*.14,-.02],[-side*.07,-.15],[-side*.15,.03]],base,{z:-.20,depth:.45});
+    arms.push(a);return group(a,'hand',side*.16,-.21,.24);
   }
-  function beret(c = color) {
-    const beret = ball(head, c, -.03, .485, -.01, .53, .15, .45); beret.rotation.z = -.15;
-    cylinder(head, dark, 0, .61, 0, .04, .05, .10, 8);
-    star(head, pale, -.27, .46, .39, .06);
+  const left=arm(-1),right=arm(1);
+  function glasses({goggles=false,sunglasses=false}={}){
+    const y=goggles?.30:-.04,z=.47;
+    if(goggles)rect(head,ink,0,y,.43,1.31,.11,.06,false);
+    [-1,1].forEach(s=>{
+      rect(head,goggles?light:light,s*.245,y,z,.43,.35,.035);
+      rect(head,sunglasses?ink:goggles?'#44413b':paper,s*.245,y,z+.042,.32,.24,.014,false);
+      if(!goggles&&!sunglasses){rect(head,base,s*.245,y-.018,z+.063,.16,.17,.009,false);rect(head,ink,s*.245+.016,y-.019,z+.077,.080,.12,.005,false);rect(head,paper,s*.245-.009,y+.021,z+.086,.035,.035,.003,false);}
+      if(sunglasses)line(head,[[s*.245-.08,y+.08,z+.067],[s*.245+.04,y-.03,z+.067]],.018,'#a3a2a1');
+    });line(head,[[-.045,y+.045,z+.055],[.045,y+.045,z+.055]],.025);
   }
-  function cap() {
-    cylinder(head, dark, 0, .405, -.01, .44, .48, .18, 12);
-    ball(head, color, 0, .525, -.02, .49, .16, .42);
-    box(head, dark, 0, .325, .39, .55, .065, .34, .045);
-    star(head, pale, 0, .47, .433, .095);
-  }
-  function headphones() {
-    const band = ring(head, dark, 0, .045, -.07, .515, .04); band.scale.y = 1.1;
-    [-1, 1].forEach(side => {
-      box(head, dark, side * .493, .02, -.025, .145, .32, .27, .07);
-      box(head, color, side * .565, .025, -.025, .04, .22, .19, .025, 'metal');
-    });
-  }
-  function scarf() {
-    const neck = ring(torso, dark, 0, .445, 0, .18, .055); neck.rotation.x = Math.PI / 2;
-    const tail = box(torso, dark, -.15, .15, .315, .16, .49, .065, .025); tail.rotation.z = -.15;
-    box(torso, pale, -.18, -.055, .352, .14, .035, .012, .004);
-  }
-  function cape(c = dark, width = .73) {
-    const cmesh = shapeMesh(torso, [[-width / 2, .38], [width / 2, .38], [width * .7, -.70], [0, -.62], [-width * .7, -.70]], c, 0, .04, -.25, .10, .035);
-    cmesh.rotation.x = -.12; motion(cmesh, .035, 1.3, 'x'); return cmesh;
-  }
-  function longHair() {
-    [-1, 1].forEach(side => {
-      const lock = ball(head, hair, side * .35, -.22, -.24, .18, .45, .21); lock.rotation.z = side * -.11;
-    });
-    ball(head, hair, 0, -.15, -.365, .36, .40, .13);
-  }
-  function arm(side, raised = false, outward = 0) {
-    const pivot = group(torso, side < 0 ? 'left-shoulder' : 'right-shoulder', side * .31, .27, 0);
-    const elbow = [side * (.16 + outward), -.29, .06];
-    const handPos = raised ? [side * (.37 + outward), -.14, .27] : [side * (.26 + outward), -.55, .18];
-    rod(pivot, coatColor, [0, 0, 0], elbow, .135);
-    ball(pivot, coatColor, ...elbow, .132);
-    rod(pivot, coatColor, elbow, handPos, .114);
-    const wrist = handPos.map((v, n) => n === 1 ? v + .03 : v);
-    ball(pivot, pale, ...wrist, .12, .085, .115);
-    const hand = group(pivot, side < 0 ? 'left-hand' : 'right-hand', ...handPos);
-    ball(hand, skin, 0, -.035, .025, .12, .135, .105);
-    ball(hand, skin, -side * .075, .015, .10, .047, .065, .052);
-    motion(pivot, raised ? .035 : .025, 1.4, 'z', side * .7);
-    return hand;
-  }
-  const left = arm(-1, ['INTJ', 'INTP', 'INFJ', 'INFP', 'ENFJ', 'ENFP', 'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'ISFP', 'ESFP'].includes(info.type), .015);
-  const right = arm(1, ['ENTJ', 'ENTP', 'INFJ', 'ENFJ', 'ENFP', 'ISTP', 'ISFP', 'ESFP'].includes(info.type), .015);
-  function book(p, c = dark, w = .42, h = .50) {
-    const b = group(p, 'book', 0, .13, .14); b.rotation.set(-.15, -.12, -.13);
-    box(b, c, 0, 0, 0, w, h, .13, .022);
-    box(b, cream, .014, 0, .072, w - .06, h - .065, .035, .008);
-    box(b, c, 0, 0, .105, w, h, .023, .009);
-    star(b, pale, 0, .035, .126, .11);
-    box(b, color, .10, -.23, .133, .046, .12, .018, .004);
-    return b;
-  }
-  function screen(p, w = .46, h = .55) {
-    const s = group(p, 'terminal', 0, .18, .16); s.rotation.z = -.12;
-    box(s, dark, 0, 0, 0, w, h, .085, .04);
-    box(s, '#263d58', 0, .014, .048, w - .065, h - .08, .024, .016);
-    return s;
-  }
-  function wrench(p) {
-    const tool = group(p, 'wrench', 0, .25, .05); tool.rotation.z = -.22;
-    box(tool, metal, 0, .08, 0, .08, .62, .09, .025, 'metal');
-    const jaw = mesh(tool, new THREE.TorusGeometry(.125, .05, 5, 12, Math.PI * 1.50), metal, 0, .43, 0, 'metal'); jaw.rotation.z = -.8;
-    box(tool, dark, 0, -.14, .003, .12, .23, .115, .025);
-    return tool;
-  }
-  // Role-specific silhouette, outfit, prop, and expression details.
-  switch (info.type) {
-    case 'INTJ': {
-      box(torso, dark, .21, -.44, .225, .15, .41, .08, .02);
-      const plan = screen(left, .62, .48); plan.rotation.y = .1;
-      for (let n = 0; n < 3; n++) box(plan, color, -.20 + n * .19, -.075 + n * .035, .066, .10, .12 + n * .07, .012, .005, 'glow');
-      rod(plan, pale, [-.22, .16, .073], [.22, .16, .073], .012);
-      const compass = group(right, 'compass', 0, .03, .08);
-      rod(compass, metal, [0, .17, 0], [-.12, -.13, 0], .025, 'metal'); rod(compass, metal, [0, .17, 0], [.12, -.13, 0], .025, 'metal');
-      ball(head, hair, .25, .35, .12, .23, .24, .31).rotation.z = -.4;
-      break;
+  function belt(){rect(torso,dark,0,-.30,.37,1.25,.12,.045);rect(torso,light,0,-.30,.421,.25,.14,.02);}
+  function staff(p){line(p,[[0,-.25,.02],[.10,.65,.02]],.035);}
+  function ruler(p){const r=rect(p,light,.16,.10,.05,.16,.80,.065);r.rotation.z=-.88;for(let j=0;j<7;j++)line(r,[[-.075,-.29+j*.09,.077],[-.015,-.29+j*.09,.077]],.009);}
+  function envelope(p){const r=rect(p,paper,0,0,0,.37,.25,.05);line(r,[[-.18,.11,.067],[0,-.035,.067],[.18,.11,.067]],.012);return r;}
+  switch(info.type){
+    case 'ISTP':{
+      glasses({goggles:true});belt();
+      line(right,[[0,-.18,.03],[.10,.27,.03]],.045);const hammer=rect(right,'#929594',.11,.28,0,.35,.18,.10);hammer.rotation.z=.53;
+      poly(left,[[-.13,.16],[-.05,.22],[.07,.11],[.04,.05],[-.09,.07],[-.14,-.04],[-.05,-.09],[.11,.03],[.17,-.03],[.04,-.18],[-.13,-.17],[-.24,-.06]],'#a8a8a0',{z:.02,depth:.07,width:.014});break;
     }
-    case 'INTP': {
-      glasses(true);
-      box(torso, dark, -.23, -.07, .26, .14, .18, .035, .015);
-      rod(torso, color, [-.24, -.10, .29], [-.24, .08, .29], .019);
-      const atom = group(left, 'atom', -.06, .43, .06);
-      for (let n = 0; n < 3; n++) { const orbit = ring(atom, color, 0, 0, 0, .29, .013, 'metal'); orbit.rotation.set(n * .9, n * .72, n * .8); }
-      ball(atom, pale, 0, 0, 0, .085, .085, .085, 'glow');
-      ball(atom, '#ffd278', .28, 0, 0, .045);
-      motion(atom, .30, .8, 'y');
-      book(right, color, .28, .35);
-      for (let n = 0; n < 3; n++) ball(head, hair, -.20 + n * .22, .49, -.1, .14, .18, .15);
-      break;
+    case 'ISFP':{
+      rect(head,light,0,.33,.44,1.40,.16,.045);rect(torso,dark,0,-.01,.38,1.21,.23,.02);rect(torso,light,0,-.01,.413,.40,.13,.02);belt();
+      const palette=ellipse(left,light,-.16,-.005,.01,.22,.28,.08);
+      [[-.08,.11],[.07,.13],[.10,-.02],[-.03,-.15]].forEach(([x,y])=>ellipse(palette,dark,x,y,.10,.032,.036,.015,false));
+      line(right,[[0,-.10,.02],[.27,.27,.02]],.030);ellipse(right,dark,.28,.28,.025,.065,.11,.03).rotation.z=-.60;break;
     }
-    case 'ENTJ': {
-      cape(dark, .86);
-      [-1, 1].forEach(s => box(torso, '#eddb9a', s * .32, .335, .015, .24, .085, .31, .025, 'metal'));
-      shapeMesh(torso, [[-.055, .33], [.055, .33], [.045, .02], [0, -.055], [-.045, .02]], dark, 0, .03, .29, .025);
-      rod(right, dark, [0, -.18, .06], [.1, .53, .06], .031); star(right, '#eddb9a', .105, .56, .06, .09);
-      ball(head, hair, -.1, .52, -.02, .31, .19, .28).rotation.z = .18;
-      break;
+    case 'ESFP':{
+      rect(torso,light,0,-.34,.36,1.25,.20,.04);for(const [p,s] of [[left,-1],[right,1]]){line(p,[[0,0,.04],[s*.19,.26,.04]],.035);const shaker=ellipse(p,light,s*.23,.32,.015,.12,.17,.09);shaker.rotation.z=-s*.5;line(shaker,[[0,-.14,.109],[0,.14,.109]],.014);}break;
     }
-    case 'ENTP': {
-      for (let n = 0; n < 5; n++) { const spike = mesh(head, new THREE.ConeGeometry(.13, .34, 5), hair, -.32 + n * .16, .51 + (n % 2) * .06, -.03); spike.rotation.z = .35 - n * .17; }
-      box(torso, dark, -.21, -.04, .272, .16, .25, .03, .015);
-      wrench(left);
-      const bulb = group(right, 'idea-bulb', .03, .35, .065);
-      cylinder(bulb, metal, 0, -.11, 0, .07, .07, .17, 10, 'metal');
-      ball(bulb, '#ffe4a2', 0, .06, 0, .18, .22, .18, 'glow');
-      for (let n = 0; n < 3; n++) { const a = .4 + n * 1.1; rod(bulb, pale, [Math.cos(a) * .26, Math.sin(a) * .27, 0], [Math.cos(a) * .33, Math.sin(a) * .36, 0], .019); }
-      motion(bulb, .13, 1.2, 'z'); break;
+    case 'ESTP':{
+      glasses({sunglasses:true});belt();
+      const bag=rect(left,'#706961',-.08,-.04,.04,.45,.34,.16);bag.rotation.z=-.20;rect(bag,ink,0,.22,.02,.19,.09,.03);line(bag,[[-.21,0,.177],[.21,0,.177]],.012);rect(bag,light,0,0,.185,.075,.06,.018,false);break;
     }
-    case 'INFJ': {
-      cape(dark, .87); longHair();
-      const hood = mesh(head, new THREE.SphereGeometry(1, 14, 12, 0, Math.PI * 2, 0, Math.PI * .60), dark, 0, .11, -.14); hood.scale.set(.565, .58, .51);
-      // Front opening keeps face visible; lifted forehead rim frames the hair.
-      const rim = ring(head, color, 0, .15, -.02, .50, .042); rim.scale.y = 1.10; rim.rotation.x = -.36;
-      book(left, dark, .34, .43);
-      rod(right, dark, [0, -.94, .04], [0, .74, .04], .035);
-      const gem = mesh(right, new THREE.OctahedronGeometry(.19), pale, 0, .85, .04, 'glow'); gem.scale.y = 1.55;
-      const halo = ring(right, color, 0, .84, .04, .26, .016, 'metal'); halo.rotation.y = .45;
-      motion(gem, .25, .8); break;
+    case 'INFJ':{
+      poly(head,[[-.17,-.20],[.17,-.20],[.16,-.57],[.08,-.73],[-.08,-.73],[-.16,-.56]],paper,{z:.44,depth:.055});line(head,[[-.13,-.35,.51],[.13,-.35,.51]],.014);
+      poly(torso,[[0,-.20],[.15,-.34],[0,-.51],[-.15,-.34]],paper,{z:.38,depth:.03});line(right,[[0,-.13,.03],[.20,.24,.03],[.40,.34,.03]],.023);break;
     }
-    case 'INFP': {
-      longHair(); beret(dark); scarf(); book(left, dark, .43, .52);
-      const dream = star(right, '#ffdfa1', .06, .44, .04, .20); dream.rotation.z = -.20; motion(dream, .18, 1.0, 'z');
-      star(right, pale, .24, .67, .03, .065);
-      rod(right, color, [0, 0, .04], [.04, .29, .04], .013);
-      break;
+    case 'ENFP':{
+      rect(torso,dark,0,-.36,.38,1.25,.09,.025);for(let j=-2;j<=2;j++)rect(torso,light,j*.22,-.43,.408,.075,.30,.008,false);
+      poly(torso,[[0,.10],[-.21,-.03],[-.18,-.25],[0,-.17],[.18,-.25],[.21,-.03]],ink,{z:.39,depth:.05,width:.015});break;
     }
-    case 'ENFJ': {
-      cape(dark, .70);
-      box(torso, dark, -.15, .08, .295, .095, .56, .03, .013).rotation.z = -.32;
-      rod(right, metal, [0, -.45, .02], [0, .72, .02], .03, 'metal');
-      heart(right, '#ffb7a9', 0, .85, .02, .22);
-      const banner = shapeMesh(right, [[.04, .59], [.38, .54], [.34, .24], [.03, .30]], color, 0, 0, .02, .025, .01);
-      star(banner, pale, .20, .42, .03, .06);
-      book(left, cream, .29, .37);
-      ball(head, hair, .05, .51, -.12, .32, .18, .30);
-      break;
+    case 'ENFJ':{
+      poly(head,[[-.42,-.16],[-.26,-.19],[-.18,-.37],[.15,-.37],[.26,-.20],[.43,-.16],[.41,-.46],[0,-.56],[-.41,-.46]],'#73796b',{z:.39,depth:.035,width:.018});rect(head,skin,0,-.31,.44,.28,.12,.008);line(head,[[-.12,-.27,.463],[.12,-.27,.463]],.012);
+      belt();rect(right,dark,.13,.29,.02,.10,.35,.08);rect(right,paper,.13,.07,.05,.48,.075,.06);poly(right,[[.02,.03],[.24,.03],[.28,-.58],[.13,-.75],[-.02,-.58]],'#d7ddd4',{z:.02,depth:.07,width:.018});line(right,[[.13,.02,.11],[.13,-.70,.11]],.010);break;
     }
-    case 'ENFP': {
-      headphones(); scarf();
-      for (let n = 0; n < 3; n++) { const curl = ball(head, n === 1 ? '#f5a4bd' : hair, -.25 + n * .23, .53 + n % 2 * .08, -.04, .17, .21, .17); curl.rotation.z = -.2; }
-      box(torso, dark, 0, .07, -.41, .56, .64, .28, .10);
-      [-1, 1].forEach(s => { cylinder(torso, pale, s * .28, -.12, -.43, .11, .14, .48, 12, 'metal'); cylinder(torso, color, s * .28, -.38, -.43, .10, .07, .10, 12, 'glow'); });
-      star(left, '#ffe59c', -.10, .47, .04, .22); star(right, pale, .06, .29, .04, .14);
-      rod(left, dark, [0, 0, .04], [-.08, .31, .04], .025);
-      break;
+    case 'INFP':{
+      for(let j=0;j<7;j++){const x=-.54+j*.18,y=.30+(.56-Math.abs(x))*.25;poly(head,[[x-.08,y-.07],[x-.12,y+.15],[x,y+.28],[x+.11,y+.07],[x+.04,y-.10]],j%2?dark:light,{z:.44,depth:.035,width:.013});}
+      rect(torso,dark,0,-.38,.36,1.25,.33,.02);for(let j=0;j<5;j++)poly(torso,[[j*.25-.62,-.32],[j*.25-.37,-.32],[j*.25-.495,-.47]],light,{z:.392,depth:.012,outline:false});break;
     }
-    case 'ISTJ': {
-      glasses();
-      shapeMesh(torso, [[-.05, .31], [.05, .31], [.06, -.03], [0, -.10], [-.06, -.03]], dark, 0, .02, .285, .022);
-      const board = screen(left, .46, .57);
-      box(board, metal, 0, .28, .065, .20, .085, .055, .018, 'metal');
-      for (let n = 0; n < 3; n++) {
-        box(board, pale, .04, .13 - n * .13, .067, .19, .026, .01, .003);
-        rod(board, color, [-.15, .13 - n * .13, .08], [-.12, .10 - n * .13, .08], .012); rod(board, color, [-.12, .10 - n * .13, .08], [-.07, .17 - n * .13, .08], .012);
-      }
-      rod(right, metal, [0, -.10, .05], [0, .22, .05], .022, 'metal'); break;
+    case 'ISTJ':{
+      glasses();poly(torso,[[-.61,.24],[0,-.06],[.61,.24],[.43,.37],[0,.10],[-.43,.37]],paper,{z:.39,depth:.025});rect(torso,'#626c6e',0,-.38,.36,1.25,.30,.025);line(torso,[[0,-.23,.41],[0,-.53,.41]],.018);
+      const folder=rect(left,'#a7a8a3',-.10,.10,.04,.45,.51,.10);folder.rotation.z=.54;line(right,[[0,0,.02],[.22,.20,.02]],.017);break;
     }
-    case 'ISFJ': {
-      longHair();
-      ball(head, hair, -.39, .24, -.23, .20, .21, .23); ball(head, hair, .39, .24, -.23, .20, .21, .23);
-      box(head, pale, 0, .42, .15, .58, .075, .43, .025);
-      const shield = group(left, 'heart-shield', -.02, .15, .18); shield.rotation.z = -.15;
-      shapeMesh(shield, [[-.29, .27], [0, .36], [.29, .27], [.25, -.13], [0, -.36], [-.25, -.13]], dark, 0, 0, 0, .08, .025);
-      shapeMesh(shield, [[-.235, .22], [0, .285], [.235, .22], [.20, -.105], [0, -.275], [-.20, -.105]], pale, 0, 0, .105, .02, .014);
-      heart(shield, color, 0, .035, .15, .13);
-      box(torso, dark, .38, -.31, .01, .28, .28, .28, .055); heart(torso, pale, .385, -.29, .158, .075);
-      rod(torso, dark, [-.18, .35, .31], [.32, -.25, .31], .035); break;
+    case 'ISFJ':{
+      poly(head,[[-.48,.41],[-.57,.67],[.04,.84],[.54,.64],[.45,.40]],base,{z:.43,depth:.055});rect(head,dark,0,.62,.506,.075,.24,.01,false);rect(head,dark,0,.62,.506,.23,.073,.01,false);
+      poly(torso,[[-.22,.24],[0,.10],[-.22,-.03]],paper,{z:.39,depth:.03});poly(torso,[[.22,.24],[0,.10],[.22,-.03]],paper,{z:.39,depth:.03});rect(torso,dark,0,-.38,.37,1.24,.16,.025);break;
     }
-    case 'ESTJ': {
-      cap();
-      box(torso, dark, 0, .04, .242, .49, .51, .065, .03);
-      for (let n = 0; n < 2; n++) box(torso, '#edd89f', -.17 + n * .34, .16, .29, .11, .035, .03, .005);
-      const tablet = screen(left, .48, .40);
-      for (let n = 0; n < 3; n++) box(tablet, color, -.14 + n * .13, -.035 + n * .035, .068, .066, .11 + n * .07, .012, .005, 'glow');
-      box(right, dark, 0, .16, .09, .12, .32, .10, .025); rod(right, metal, [0, .3, .09], [0, .46, .09], .014);
-      break;
+    case 'ESTJ':{
+      glasses();poly(torso,[[-.58,.18],[.58,-.26],[-.58,-.26]],dark,{z:.375,depth:.026});ruler(right);break;
     }
-    case 'ESFJ': {
-      longHair();
-      box(torso, pale, 0, -.09, .275, .45, .62, .08, .035);
-      box(torso, dark, 0, -.22, .322, .27, .20, .025, .012);
-      heart(torso, color, 0, .05, .33, .09);
-      const gift = group(left, 'gift', 0, .16, .16);
-      box(gift, '#f7c6b9', 0, 0, 0, .40, .34, .34, .045);
-      box(gift, pale, 0, .18, 0, .44, .08, .37, .02);
-      box(gift, dark, 0, .025, .179, .07, .39, .025, .006);
-      [-1, 1].forEach(s => { const bow = ring(gift, dark, s * .075, .275, 0, .078, .022); bow.scale.y = .65; bow.rotation.z = s * .45; });
-      const cup = cylinder(right, pale, 0, .095, .08, .105, .08, .24, 16);
-      ring(cup, dark, .11, .01, 0, .07, .02);
-      star(head, color, -.39, .21, .26, .105); break;
+    case 'ESFJ':{
+      rect(torso,paper,0,-.11,.395,.69,.80,.025);[-1,1].forEach(s=>rect(torso,light,s*.47,-.1,.393,.15,.79,.025));
+      const strap=rect(torso,dark,-.61,.05,.44,.08,.87,.03);strap.rotation.z=.08;const bag=rect(left,base,-.13,-.15,.02,.36,.34,.12);bag.rotation.z=.28;envelope(bag);envelope(right).rotation.z=-.35;break;
     }
-    case 'ISTP': {
-      glasses(true, true);
-      box(torso, dark, 0, .035, .245, .43, .45, .06, .025);
-      [-1, 1].forEach(s => box(torso, dark, s * .14, .29, .25, .075, .26, .035, .015));
-      for (let n = 0; n < 3; n++) box(torso, metal, -.24 + n * .15, -.27, .29, .07, .19, .08, .016, 'metal');
-      wrench(right);
-      box(left, dark, -.015, .08, .12, .28, .21, .17, .03);
-      cylinder(left, metal, -.015, .08, .235, .063, .063, .06, 8, 'metal').rotation.x = Math.PI / 2;
-      break;
+    case 'INTJ':{
+      rect(torso,dark,0,-.23,.37,1.24,.45,.035);poly(torso,[[-.59,.28],[-.09,.07],[-.09,-.18],[-.59,.06]],light,{z:.40,depth:.02});poly(torso,[[.59,.28],[-.09,.07],[.59,-.12]],base,{z:.40,depth:.02});line(torso,[[0,.05,.441],[0,-.46,.441]],.015);for(const y of [-.10,-.29])ellipse(torso,paper,.10,y,.43,.032,.032,.008);break;
     }
-    case 'ISFP': {
-      beret(dark); longHair();
-      box(torso, pale, 0, -.045, .275, .46, .64, .065, .04);
-      [[-.10, .1, '#ee9fbc'], [.10, -.13, '#89c6dc'], [-.08, -.24, '#85c49a']].forEach(([x, y, c]) => ball(torso, c, x, y, .316, .04, .055, .009));
-      const paletteMesh = ball(left, '#ddac6f', -.04, .13, .17, .30, .22, .065); paletteMesh.rotation.z = -.25;
-      for (let n = 0; n < 5; n++) { const a = .35 + n * .66; ball(left, ['#f2809c', '#89bffc', '#77d7ad', '#fff1bc', '#b89ce8'][n], -.04 + Math.cos(a) * .22, .13 + Math.sin(a) * .15, .238, .049, .044, .015); }
-      rod(right, dark, [0, -.18, .04], [.08, .46, .04], .026);
-      const brush = mesh(right, new THREE.ConeGeometry(.06, .18, 8), '#f2809c', .09, .52, .04); brush.rotation.z = -.12;
-      break;
+    case 'INTP':{
+      glasses();[-1,1].forEach(s=>rect(torso,paper,s*.49,-.08,.40,.23,1.02,.035));poly(torso,[[-.36,.26],[.36,.26],[0,-.08]],dark,{z:.40,depth:.026});poly(torso,[[-.36,-.40],[.36,-.40],[0,-.08]],'#9a83b1',{z:.40,depth:.026});
+      poly(left,[[-.05,.15],[.06,.15],[.06,.01],[.19,-.24],[-.18,-.24],[-.05,.01]],paper,{z:.03,depth:.08,width:.015});poly(left,[[-.10,-.12],[.11,-.12],[.16,-.21],[-.15,-.21]],base,{z:.13,depth:.009,outline:false});break;
     }
-    case 'ESTP': {
-      box(torso, dark, -.2, .02, .28, .16, .43, .10, .03); box(torso, dark, .2, .02, .28, .16, .43, .10, .03);
-      box(torso, pale, 0, .34, .20, .52, .10, .20, .03);
-      glasses(true, true);
-      ball(head, hair, -.12, .49, .02, .31, .23, .28).rotation.z = -.3;
-      const board = group(left, 'hoverboard', -.06, -.04, .12); board.rotation.z = -.25;
-      box(board, dark, 0, 0, 0, .33, 1.02, .12, .12);
-      box(board, color, 0, 0, .071, .27, .90, .025, .10);
-      star(board, pale, 0, .15, .09, .11);
-      [-1, 1].forEach(s => {
-        rod(board, metal, [-.22, s * .34, -.08], [.22, s * .34, -.08], .025);
-        [-1, 1].forEach(w => { const wheel = cylinder(board, ink, w * .22, s * .34, -.08, .08, .08, .065, 12); wheel.rotation.z = Math.PI / 2; });
-      });
-      box(right, dark, 0, -.02, .055, .23, .13, .17, .025);
-      break;
+    case 'ENTJ':{
+      // Round spectacles, a tied-back silhouette and slim pointer distinguish the leader.
+      [-1,1].forEach(s=>{const points=Array.from({length:32},(_,j)=>[s*.225+Math.cos(j*Math.PI/16)*.203,-.04+Math.sin(j*Math.PI/16)*.21,.448]);stroke(head,points,{closed:true,width:.017});});line(head,[[-.02,-.005,.45],[.02,-.005,.45]],.02);
+      poly(torso,[[-.62,.24],[.60,-.24],[-.60,-.24]],dark,{z:.39,depth:.025});ellipse(torso,paper,0,.01,.43,.032,.032,.01);staff(right);break;
     }
-    case 'ESFP': {
-      headphones();
-      for (let n = 0; n < 5; n++) ball(head, hair, -.31 + n * .15, .48 + (n % 2) * .08, .015, .15, .19, .18);
-      [-1, 1].forEach(s => { const lapel = box(torso, pale, s * .19, .12, .292, .11, .40, .055, .02); lapel.rotation.z = s * -.25; });
-      star(torso, '#e7a5d0', -.24, -.06, .327, .082);
-      rod(right, dark, [0, -.15, .05], [.035, .27, .05], .045);
-      ball(right, metal, .037, .34, .05, .105, .14, .105, 'metal');
-      for (let n = 0; n < 3; n++) { const stripe = ring(right, dark, .037, .29 + n * .045, .05, .095, .008); stripe.rotation.x = Math.PI / 2; }
-      star(left, pale, -.08, .36, .08, .16); star(left, '#f4b9d8', -.27, .62, .05, .095);
-      motion(torso, .025, 2.0, 'z'); break;
+    case 'ENTP':{
+      poly(torso,[[-.34,.30],[0,-.07],[.34,.30]],paper,{z:.39,depth:.035});poly(torso,[[-.61,.19],[.61,-.33],[-.61,-.33]],dark,{z:.405,depth:.025});line(torso,[[-.61,-.36,.45],[.61,-.36,.45]],.02);break;
     }
   }
-  const initialTransforms = [];
-  root.traverse(object => initialTransforms.push({ object, position: object.position.clone(), rotation: object.rotation.clone(), scale: object.scale.clone() }));
-  let disposed = false;
-  return {
-    root, info,
-    update(timeSeconds, { reducedMotion = false, celebrating = false } = {}) {
-      if (disposed) return;
-      // Reset first: absolute-time sampling stays deterministic, including switching motion off.
-      for (const pose of initialTransforms) { pose.object.position.copy(pose.position); pose.object.rotation.copy(pose.rotation); pose.object.scale.copy(pose.scale); }
-      if (reducedMotion) return;
-      const t = Number.isFinite(timeSeconds) ? timeSeconds : 0;
-      motions.forEach(fn => fn(t));
-      torso.position.y = 1.34 + Math.sin(t * 1.8) * .012;
-      head.position.y = 2.37 + Math.sin(t * 1.8) * .014;
-      if (celebrating) {
-        torso.rotation.z += Math.sin(t * 4) * .04;
-        head.rotation.z += Math.sin(t * 4 + .2) * .07;
-        left.parent.rotation.z -= .13; right.parent.rotation.z += .13;
-      }
+  const neutral=[];root.traverse(o=>neutral.push({o,p:o.position.clone(),r:o.rotation.clone()}));let disposed=false;
+  return {root,info,
+    update(timeSeconds,{reducedMotion=false,celebrating=false}={}){
+      if(disposed)return;for(const {o,p,r} of neutral){o.position.copy(p);o.rotation.copy(r);}if(reducedMotion)return;
+      const t=Number.isFinite(timeSeconds)?timeSeconds:0;
+      head.rotation.z=Math.sin(t*.95+index*.4)*.018;head.rotation.y=Math.sin(t*.7+index*.3)*.045;
+      arms.forEach((a,i)=>{a.rotation.z+=Math.sin(t*(info.type==='ESFP'?3:1.5)+i)*.035;if(celebrating)a.rotation.z+=(i?1:-1)*(.12+Math.sin(t*5)*.09);});
     },
-    dispose() {
-      if (disposed) return;
-      disposed = true;
-      geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose());
-      geometries.clear(); materials.clear(); cache.clear(); motions.length = 0;
-      root.removeFromParent(); root.clear();
-    },
+    dispose(){if(disposed)return;disposed=true;resources.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());resources.clear();materials.clear();root.removeFromParent();root.clear();}
   };
 }

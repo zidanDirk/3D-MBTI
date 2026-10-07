@@ -8,114 +8,114 @@
   "diagnostics": [
     {
       "type": "INTJ",
-      "drawCalls": 74,
-      "triangles": 19834,
-      "geometries": 34,
+      "drawCalls": 77,
+      "triangles": 17892,
+      "geometries": 52,
       "dpr": 1
     },
     {
       "type": "INTP",
-      "drawCalls": 84,
-      "triangles": 22658,
-      "geometries": 37,
+      "drawCalls": 106,
+      "triangles": 20640,
+      "geometries": 68,
       "dpr": 1
     },
     {
       "type": "ENTJ",
-      "drawCalls": 71,
-      "triangles": 18702,
-      "geometries": 31,
+      "drawCalls": 74,
+      "triangles": 24588,
+      "geometries": 51,
       "dpr": 1
     },
     {
       "type": "ENTP",
-      "drawCalls": 78,
-      "triangles": 19144,
-      "geometries": 39,
+      "drawCalls": 68,
+      "triangles": 16752,
+      "geometries": 46,
       "dpr": 1
     },
     {
       "type": "INFJ",
-      "drawCalls": 78,
-      "triangles": 20940,
-      "geometries": 36,
+      "drawCalls": 68,
+      "triangles": 17388,
+      "geometries": 46,
       "dpr": 1
     },
     {
       "type": "INFP",
-      "drawCalls": 81,
-      "triangles": 21466,
-      "geometries": 39,
+      "drawCalls": 94,
+      "triangles": 19328,
+      "geometries": 61,
       "dpr": 1
     },
     {
       "type": "ENFJ",
-      "drawCalls": 76,
-      "triangles": 19858,
-      "geometries": 36,
+      "drawCalls": 84,
+      "triangles": 17660,
+      "geometries": 57,
       "dpr": 1
     },
     {
       "type": "ENFP",
-      "drawCalls": 83,
-      "triangles": 21742,
-      "geometries": 37,
+      "drawCalls": 80,
+      "triangles": 17224,
+      "geometries": 52,
       "dpr": 1
     },
     {
       "type": "ISTJ",
-      "drawCalls": 89,
-      "triangles": 22198,
-      "geometries": 38,
+      "drawCalls": 95,
+      "triangles": 18372,
+      "geometries": 62,
       "dpr": 1
     },
     {
       "type": "ISFJ",
-      "drawCalls": 76,
-      "triangles": 20426,
-      "geometries": 33,
+      "drawCalls": 79,
+      "triangles": 17344,
+      "geometries": 52,
       "dpr": 1
     },
     {
       "type": "ESTJ",
-      "drawCalls": 78,
-      "triangles": 21078,
-      "geometries": 38,
+      "drawCalls": 100,
+      "triangles": 20132,
+      "geometries": 67,
       "dpr": 1
     },
     {
       "type": "ESFJ",
-      "drawCalls": 78,
-      "triangles": 21406,
-      "geometries": 36,
+      "drawCalls": 86,
+      "triangles": 18132,
+      "geometries": 58,
       "dpr": 1
     },
     {
       "type": "ISTP",
       "drawCalls": 80,
-      "triangles": 21174,
-      "geometries": 37,
+      "triangles": 15600,
+      "geometries": 54,
       "dpr": 1
     },
     {
       "type": "ISFP",
-      "drawCalls": 82,
-      "triangles": 22602,
-      "geometries": 30,
+      "drawCalls": 91,
+      "triangles": 19276,
+      "geometries": 60,
       "dpr": 1
     },
     {
       "type": "ESTP",
-      "drawCalls": 83,
-      "triangles": 20822,
-      "geometries": 36,
+      "drawCalls": 91,
+      "triangles": 14724,
+      "geometries": 61,
       "dpr": 1
     },
     {
       "type": "ESFP",
-      "drawCalls": 84,
-      "triangles": 23022,
-      "geometries": 34,
+      "drawCalls": 75,
+      "triangles": 22924,
+      "geometries": 51,
       "dpr": 1
     }
   ]

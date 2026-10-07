@@ -25,7 +25,7 @@ function frameModel(camera, root, aspect) {
   const box = new THREE.Box3().setFromObject(root), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
   const halfHeight = Math.max(size.y*.59,Math.max(size.x,size.z)*.7/Math.max(.25,aspect));
   camera.left=-halfHeight*aspect;camera.right=halfHeight*aspect;camera.top=halfHeight;camera.bottom=-halfHeight;
-  camera.position.set(center.x+4.2,center.y+1.8,center.z+8);camera.lookAt(center);camera.updateProjectionMatrix();
+  camera.position.set(center.x+1.5,center.y+.65,center.z+10);camera.lookAt(center);camera.updateProjectionMatrix();
   return center;
 }
 // Every atlas card is a render of the real model. One reusable offscreen renderer,

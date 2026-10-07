@@ -9,7 +9,7 @@ test('all sixteen figures have distinct identities and fit the mobile rendering 
  for(const type of characterTypes){
   const model=createCharacter(type),info=getCharacterInfo(type);props.add(info.prop);families.set(info.family,(families.get(info.family)||0)+1);
   assert.equal(model.root.userData.characterType,type);
-  let calls=0,triangles=0;model.root.traverse(o=>{if(o.isMesh){calls++;triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;}});
+  let calls=0,triangles=0;model.root.traverse(o=>{if(o.isMesh){calls+=Array.isArray(o.material)?o.material.length:1;triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;}});
   assert.ok(calls<=170,`${type}: ${calls} meshes`);assert.ok(triangles<40000,`${type}: ${triangles} triangles`);
   const box=new THREE.Box3().setFromObject(model.root);assert.ok(box.min.y>=-.01);assert.ok(box.max.y<3.8);assert.ok(box.max.x-box.min.x<3.5);
   model.dispose();
@@ -22,7 +22,7 @@ test('animation is deterministic, reduced motion restores neutral poses, disposa
   model.update(2.3);const animated=pose(model.root);assert.notDeepEqual(animated,neutral);
   model.update(8,{celebrating:true});model.update(2.3);assert.deepEqual(pose(model.root),animated);
   model.update(10,{reducedMotion:true});assert.deepEqual(pose(model.root),neutral);
-  const resources=new Set();model.root.traverse(o=>{if(o.isMesh){resources.add(o.geometry);resources.add(o.material);}});
+  const resources=new Set();model.root.traverse(o=>{if(o.isMesh){resources.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])resources.add(m);}});
   let disposed=0;resources.forEach(r=>r.addEventListener('dispose',()=>disposed++));model.dispose();model.dispose();assert.equal(disposed,resources.size);assert.equal(model.root.children.length,0);
  }
 });
