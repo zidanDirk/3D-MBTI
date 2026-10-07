@@ -1,0 +1,81 @@
+name: Build & Deploy H5 Game to Qiniu
+
+on:
+  push:
+    branches: ["master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Avoid overlapping uploads to the same mbti/ prefix.
+concurrency:
+  group: qiniu-mbti-deploy
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test H5 game
+        run: npm test
+
+      - name: Build H5 game
+        env:
+          VITE_API_ORIGIN: https://backend.zhangzidan.com
+        # Match the Kodo key prefix so scripts/styles resolve under /mbti/.
+        run: npm run build -- --base=/mbti/
+
+      - name: Setup Qshell
+        env:
+          QINIU_AK: ${{ secrets.QINIU_AK || vars.QINIU_AK }}
+          QINIU_SK: ${{ secrets.QINIU_SK || vars.QINIU_SK }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$QINIU_AK" || -z "$QINIU_SK" ]]; then
+            echo "QINIU_AK and QINIU_SK must be configured as repository secrets or variables."
+            exit 1
+          fi
+          echo "::add-mask::$QINIU_AK"
+          echo "::add-mask::$QINIU_SK"
+          cd "$RUNNER_TEMP"
+          wget -q https://devtools.qiniu.com/qshell-v2.13.0-linux-amd64.tar.gz
+          tar -zxf qshell-v2.13.0-linux-amd64.tar.gz
+          sudo install -m 755 qshell /usr/local/bin/qshell
+          qshell account "$QINIU_AK" "$QINIU_SK" qiniu-deploy-user
+
+      - name: Upload to Qiniu Kodo
+        env:
+          QINIU_BUCKET: ${{ secrets.QINIU_BUCKET || vars.QINIU_BUCKET }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$QINIU_BUCKET" ]]; then
+            echo "QINIU_BUCKET must be configured as a repository secret or variable."
+            exit 1
+          fi
+          qshell qupload2 \
+            --src-dir=dist \
+            --bucket="$QINIU_BUCKET" \
+            --key-prefix=mbti/ \
+            --overwrite \
+            --rescan-local \
+            --skip-fixed-strings=".DS_Store" \
+            --failure-list="$RUNNER_TEMP/qiniu-upload-failures.txt"
+          if [[ -s "$RUNNER_TEMP/qiniu-upload-failures.txt" ]]; then
+            echo "Some files failed to upload to Qiniu. Check the upload log."
+            exit 1
+          fi

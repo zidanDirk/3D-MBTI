@@ -63,3 +63,13 @@ node artifacts/character-check.mjs
 ![16 种人格角色](artifacts/characters/atlas-desktop.png)
 
 同一套 Three.js 模型生成图鉴缩略图、实时角色与导出肖像。图鉴复用一个离屏渲染器，详情和结果按需创建并在离开时释放；不为 16 张卡片同时创建实时场景。所有模型随代码离线生成，无付费素材调用。
+
+## 七牛云自动部署
+
+工作流：`.github/workflows/deploy-qiniu.yml`。推送 `master` 或在 GitHub Actions 手动触发后，使用 Node.js 22 安装依赖、执行测试、构建，并将 `dist/` 上传至七牛 Kodo 的 `mbti/` 前缀，同名文件覆盖，不删除旧资源。
+
+使用已配置的仓库 Secrets 或 Variables：`QINIU_AK`、`QINIU_SK`、`QINIU_BUCKET`（Secrets 优先）。工作流未指定 GitHub Environment；若变量仅存于某个 Environment，需要为 job 添加对应的 `environment`。
+
+部署构建使用 `npm run build -- --base=/mbti/`，访问地址为绑定域名下的 `/mbti/index.html`（配置默认首页后可使用 `/mbti/`）。本地默认构建仍支持根路径。保留参考配置中的 `VITE_API_ORIGIN`，当前应用没有调用该 API。工作流不自动刷新 CDN 缓存。
+
+上传参数依据 [七牛 qshell qupload2 文档](https://github.com/qiniu/qshell/blob/master/docs/qupload2.md)。上传失败清单非空时，工作流会标记失败。
