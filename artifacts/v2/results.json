@@ -1,0 +1,17 @@
+{
+  "checks": [
+    "Desktop: all 12/32/60 real-input completions, balanced scores, independent resume, preserve future answers, preview vs real reports, PNG/HTML export, growth persistence, comparison, delete confirmation, keyboard",
+    "390px: no overflow home/report/history, real touch completion, result, report, growth, history, audio, reduced-motion and 3D drag",
+    "320px: no overflow home/report/history, real touch completion, result, report, growth, history, audio, reduced-motion and 3D drag"
+  ],
+  "errors": [],
+  "diagnostics": {
+    "drawCalls": 111,
+    "triangles": 51680,
+    "geometries": 111,
+    "textures": 0,
+    "selected": 0,
+    "dpr": 1,
+    "postPasses": 0
+  }
+}

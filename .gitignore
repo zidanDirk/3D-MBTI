@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.DS_Store
+.env
+.env.*
+!.env.example
+artifacts/*
+!artifacts/game-progress.md
+!artifacts/final-evidence.md
+!artifacts/v2-check.mjs
+!artifacts/v2/
+artifacts/v2/*
+!artifacts/v2/results.json
+!artifacts/v2/desktop-home.png
+!artifacts/v2/mobile-390-home.png
