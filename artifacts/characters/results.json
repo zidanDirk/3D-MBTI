@@ -1,0 +1,122 @@
+{
+  "checks": [
+    "16 unique portraits; four family filters; all 16 live models render; drag/reset; neutral animation freeze; greeting sequence; dialog disposal",
+    "390px production: atlas no overflow, touch detail, live result INFP, PNG portrait export, report character link",
+    "320px production: atlas no overflow, touch detail, live result INFP, PNG portrait export, report character link"
+  ],
+  "errors": [],
+  "diagnostics": [
+    {
+      "type": "INTJ",
+      "drawCalls": 74,
+      "triangles": 19834,
+      "geometries": 34,
+      "dpr": 1
+    },
+    {
+      "type": "INTP",
+      "drawCalls": 84,
+      "triangles": 22658,
+      "geometries": 37,
+      "dpr": 1
+    },
+    {
+      "type": "ENTJ",
+      "drawCalls": 71,
+      "triangles": 18702,
+      "geometries": 31,
+      "dpr": 1
+    },
+    {
+      "type": "ENTP",
+      "drawCalls": 78,
+      "triangles": 19144,
+      "geometries": 39,
+      "dpr": 1
+    },
+    {
+      "type": "INFJ",
+      "drawCalls": 78,
+      "triangles": 20940,
+      "geometries": 36,
+      "dpr": 1
+    },
+    {
+      "type": "INFP",
+      "drawCalls": 81,
+      "triangles": 21466,
+      "geometries": 39,
+      "dpr": 1
+    },
+    {
+      "type": "ENFJ",
+      "drawCalls": 76,
+      "triangles": 19858,
+      "geometries": 36,
+      "dpr": 1
+    },
+    {
+      "type": "ENFP",
+      "drawCalls": 83,
+      "triangles": 21742,
+      "geometries": 37,
+      "dpr": 1
+    },
+    {
+      "type": "ISTJ",
+      "drawCalls": 89,
+      "triangles": 22198,
+      "geometries": 38,
+      "dpr": 1
+    },
+    {
+      "type": "ISFJ",
+      "drawCalls": 76,
+      "triangles": 20426,
+      "geometries": 33,
+      "dpr": 1
+    },
+    {
+      "type": "ESTJ",
+      "drawCalls": 78,
+      "triangles": 21078,
+      "geometries": 38,
+      "dpr": 1
+    },
+    {
+      "type": "ESFJ",
+      "drawCalls": 78,
+      "triangles": 21406,
+      "geometries": 36,
+      "dpr": 1
+    },
+    {
+      "type": "ISTP",
+      "drawCalls": 80,
+      "triangles": 21174,
+      "geometries": 37,
+      "dpr": 1
+    },
+    {
+      "type": "ISFP",
+      "drawCalls": 82,
+      "triangles": 22602,
+      "geometries": 30,
+      "dpr": 1
+    },
+    {
+      "type": "ESTP",
+      "drawCalls": 83,
+      "triangles": 20822,
+      "geometries": 36,
+      "dpr": 1
+    },
+    {
+      "type": "ESFP",
+      "drawCalls": 84,
+      "triangles": 23022,
+      "geometries": 34,
+      "dpr": 1
+    }
+  ]
+}

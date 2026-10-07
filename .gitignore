@@ -13,3 +13,11 @@ artifacts/v2/*
 !artifacts/v2/results.json
 !artifacts/v2/desktop-home.png
 !artifacts/v2/mobile-390-home.png
+
+!artifacts/character-check.mjs
+!artifacts/characters/
+artifacts/characters/*
+!artifacts/characters/results.json
+!artifacts/characters/atlas-desktop.png
+!artifacts/characters/detail-desktop.png
+!artifacts/characters/detail-390.png
