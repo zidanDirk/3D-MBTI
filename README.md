@@ -1,8 +1,19 @@
-# INNER SPACE · 人格宇宙 2.1
+# INNER SPACE · 人格宇宙 2.2
 
 赛博朋克风格的 3D MBTI 自我探索 H5：霓虹悬浮城市、三档情境测试、人格报告与成长档案。支持桌面、手机触摸和键盘操作。
 
 ![INNER SPACE 2.0](artifacts/v2/desktop-home.png)
+
+## 两种新玩法
+
+首页、测试结果页或导航「游戏厅」均可进入。调研来源、设计取舍与验收说明见 [玩法调研](docs/gameplay-research.md)。
+
+- **霓虹夜航**：6 步原创分支故事，管理电量、信号与同行关系；10 个途中节点、111 条完整路线、4 种可收集结局。角色可选、3D 可旋转，选择后有明确反馈；进度与收藏在本机保存。
+- **双人默契挑战**：两人共用一台设备，轮流选择自己的答案并预测对方。3 个题包、18 个情境、每局 6 回合，交接幕保护揭晓前的答案，结算按实际选择计分并提供聊天话题。双人答案仅保留在本次页面，刷新清空，不上传。
+
+两种玩法不修改人格评分，也不输出所谓人格兼容度。
+
+![游戏厅](artifacts/gameplay/hub-desktop.png)
 
 ## 功能
 
@@ -38,6 +49,7 @@ npm run preview -- --port 5189
 # 启动构建预览 5189 和开发服务 5188 后：
 node artifacts/v2-check.mjs
 node artifacts/character-check.mjs
+node artifacts/gameplay-check.mjs
 ```
 
 浏览器测试默认使用 macOS 系统 Chrome，可用 `CHROME_PATH` 指定其他 Chromium 可执行文件，用 `TEST_URL` 指定生产预览地址。它通过真实点击/触摸完成三档测试，并检查进度、报告、下载、打卡、对比、删除和手机布局。开发服务仅用于最后采集 renderer 诊断。详细证据见 [验证记录](artifacts/final-evidence.md)。
@@ -46,6 +58,9 @@ node artifacts/character-check.mjs
 
 | 模块 | 职责 |
 | --- | --- |
+| `src/adventure.js` / `src/duo.js` | 分支故事与双人挑战的纯规则、原创新情境 |
+| `src/playground.js` / `src/playground.css` | 游戏厅、交接幕、回响、结算与手机交互 |
+| `src/play-store.js` | 冒险路径重放校验、自动存档与去重收藏 |
 | `src/scene.js` | Three.js 几何体、材质、光照、动画、合批和指针交互 |
 | `src/characters.js` | 16 种角色的程序化几何、身份与动作；资源释放 |
 | `src/character-viewer.js` | 可旋转角色展台、缓存缩略图、高分辨率导出肖像 |

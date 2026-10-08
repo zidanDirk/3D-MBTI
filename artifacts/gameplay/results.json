@@ -1,0 +1,44 @@
+{
+  "routes": 111,
+  "endingPaths": {
+    "ending-signal": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "ending-sunrise": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      3
+    ],
+    "ending-together": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1
+    ],
+    "ending-secret": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      2
+    ]
+  },
+  "checks": [
+    "4 endings completed via actual choices; route costs, feedback, restart cancellation, reload continuation, collection persistence",
+    "3 decks × 6 actual rounds; A/B curtains conceal options/answers; navigation re-curtains; incomplete submit blocked; exact prediction totals; no MBTI mutation; reload clears duo",
+    "390px: touch story completion, 3D drag, six duo rounds and summary, no horizontal overflow",
+    "320px: touch story completion, 3D drag, six duo rounds and summary, no horizontal overflow"
+  ],
+  "errors": []
+}

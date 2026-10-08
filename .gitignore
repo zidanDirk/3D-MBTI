@@ -24,3 +24,12 @@ artifacts/characters/*
 
 !artifacts/render-character-lineup.mjs
 !artifacts/characters/reference-style-lineup.png
+
+!artifacts/gameplay-check.mjs
+!artifacts/gameplay/
+artifacts/gameplay/*
+!artifacts/gameplay/results.json
+!artifacts/gameplay/hub-desktop.png
+!artifacts/gameplay/story-desktop.png
+!artifacts/gameplay/duo-reveal-desktop.png
+!artifacts/gameplay/duo-answer-390.png
